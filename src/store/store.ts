@@ -7,7 +7,7 @@ import { API_URL } from '../http';
 import UserService from '../services/UserService';
 
 export default class Store {
-  user = {} as IUser;
+  user!:IUser;
   users = [] as IUser[];
   isAuth = false;
   isLoading = false;
@@ -58,7 +58,7 @@ export default class Store {
 
   async logout() {
     try {
-      const response = await AuthService.logout;
+      await AuthService.logout();
       localStorage.removeItem('token');
       this.setAuth(false);
       this.setUser({} as IUser);
@@ -75,6 +75,9 @@ export default class Store {
         localStorage.setItem('token', response.data.accessToken);
         this.setAuth(true);
         this.setUser(response.data.user);
+        console.log(response.data.user)
+        console.log(this.user.id)
+
         this.getUsers();
     } catch (e:any) {
       this.setError(e.response?.data?.message);
@@ -97,7 +100,6 @@ export default class Store {
       await AuthService.deleteUser(id);
       this.users = this.users.filter((user) => user._id !== id);
       this.selectedUser = null;
-      this.setAuth(false);
     } catch (e:any) {
       this.setError(e.response?.data?.message);
     }
@@ -106,9 +108,15 @@ export default class Store {
   async blockUser(id: string) {
     try {
       await AuthService.blockUser(id);
-      await this.getUsers();
-      this.selectedUser = null;
-      this.setAuth(false);
+      console.log(this.user.id)
+      console.log(id)
+
+      if (this.isAuth && this.user.id == id) {
+        await this.logout();
+      } else {
+        await this.getUsers();
+        this.selectedUser = null;
+      }
     } catch (e:any) {
       this.setError(e.response?.data?.message);
     }
@@ -133,4 +141,3 @@ export default class Store {
     this.error = '';
   }
 }
-
